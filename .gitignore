@@ -17,4 +17,3 @@ server/uploads/*
 lookup_resultmodel.csv
 lookup.csv
 models.json
-realtransformer.ipynb
