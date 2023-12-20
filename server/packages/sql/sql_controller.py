@@ -92,11 +92,12 @@ class Database:
             con.commit()
         pass
 
+    # reads the tables in the database
     def readTable(self,tablename="",):
         with self.session as con:
             res = con.scalar(select(Product))
             print(res)
-
+    # make custom commands through text
     def custom_command(self, command):
         with self.session as con:
             res = con.execute(text(command))
