@@ -14,7 +14,7 @@ data = {
 from packages.sql import sql_controller
 
 db = sql_controller.Database()
-db.importTable("aa")
+db.importTable("aa.csv")
 
 
 # def line_analysis(lines):
