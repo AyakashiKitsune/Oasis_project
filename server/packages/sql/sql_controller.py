@@ -1,5 +1,6 @@
-from sqlalchemy import URL, column ,create_engine, select
-from sqlalchemy.orm import sessionmaker
+from typing import Mapping
+from sqlalchemy import URL, Column, Integer, MetaData, column ,create_engine, insert, select,Table
+from sqlalchemy.orm import sessionmaker,registry
 from sqlalchemy.sql import text
 import pandas as pd
 
@@ -25,7 +26,7 @@ class Database:
             port=3306,
         )
         # create a link to back nd
-        self.engine = create_engine(url,echo=True)
+        self.engine = create_engine(url,echo=True,)
         # execute a sql code, to make OasisBase database
         try:
             with self.engine.connect() as session:
@@ -40,8 +41,9 @@ class Database:
             password= "AyakashiKitsune#9262",
             host="localhost",
             port=3306,
-            database= Database.database_name
-        ), echo=True
+            database= Database.database_name,
+            query={"local_infile":'1'}
+        ), echo=True,connect_args={"local_infile":'1'}
         ) 
         Session = sessionmaker(self.engine,)
         self.session = Session()
@@ -61,28 +63,57 @@ class Database:
         df.columns = columns
         df['date'] = pd.to_datetime(df['date'])
         formats = [str(df.dtypes[i]) for i in df.dtypes.keys() ]
-        del(df)
-        return  columns,formats
+        return  df,columns,formats
 
+    class Original_Table:
+        pass
     #create table and imports the table
     def importTable(self, filename):
-        column,format = self.getColumnsfromCSVFile(filename)
-        chaincols = [f"{column[i]} {pandasToSQLdtypes(format[i])}," for i in range(len(column))]
+        df,column,format = self.getColumnsfromCSVFile(filename)
         
-        createTableCommand = """create table {}.original_table (id INTEGER NOT NULL AUTO_INCREMENT,{} 
-            primary key (id))""".format(Database.database_name,' '.join(chaincols))
-        importTableContents = """load data local infile 'uploads/{}' into table original_table 
-            fields terminated by ',' enclosed by '\"' 
-            lines terminated by '\n' ignore 1 rows;""".format(filename)
+        # these are the loss rows because it has null values
+        null_value_table = self.get_null_rows(df)
         
-        try:
-            self.custom_command(createTableCommand)
-        except: 
-            print(f'table original_table already created!!!')
-        try:
-            self.custom_command(importTableContents)
-        except Exception as error:
-            print("error {}".format(error))
+        df.dropna(inplace=True)
+        df.reset_index(drop=True,inplace=True)
+        
+        mapper_registry = registry()     
+        originalTable = Table(
+            "original_table",
+            mapper_registry.metadata,
+            Column("id", Integer, primary_key=True,autoincrement=True, nullable=False),
+            *[Column(column[i],pandasToSQLdtypes(format[i]),) for i in range(len(column))]
+        )
+        mapper_registry.metadata.create_all(self.engine)
+        mapper_registry.map_imperatively(self.Original_Table, originalTable)
+
+        for i in range(df[49425:].shape[0]):
+            item = insert(self.Original_Table).values({str(key): str(df.loc[i][key]) for key in df.loc[i].keys()} )
+            self.session.execute(item)
+            self.session.commit()
+        return null_value_table
+            
+        
+
+    # return a dictionary/json {column_name, table} 
+    def get_null_rows(self,df):
+        null_clms = []
+        for col in df.columns:
+            if df[df[col].isnull()].shape[0] > 0:
+                null_clms.append(col)
+        tables = []
+        for col in null_clms:
+            tables.append(
+                {
+                    "column_name" : col,
+                    "table" : df[df[col].isnull()]
+                }
+            )
+        del(null_clms)
+        return tables
+
+
+    
 
 
     # insert table to any table just make a class like Inventory(), Product(), Sales()
