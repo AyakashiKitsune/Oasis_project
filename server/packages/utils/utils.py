@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.sql.sqltypes import Date,Time,String,Integer,Float,Boolean
+from sqlalchemy import DateTime,String,Integer,Double, Boolean,Time
 from datetime import datetime
 
 def splitRemoveEndline(words):
@@ -13,12 +13,12 @@ def prettified_word(words):
 
 def pandasToSQLdtypes(pandasdtype):
     classifiy = {
-        "object" : "VARCHAR(255)",
-        "int64" : "INTEGER",
-        "float64" : "DOUBLE",
-        "bool" : "BOOLEAN",
-        "datetime64[ns]" : "DATE",
-        "timedelta[ns]" : "TIME"
+        "object" : String(255),
+        "int64" : Integer,
+        "float64" : Double,
+        "bool" : Boolean,
+        "datetime64[ns]" : DateTime,
+        "timedelta[ns]" : Time
     }
     return classifiy[pandasdtype]
 
