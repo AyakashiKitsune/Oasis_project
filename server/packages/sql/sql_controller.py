@@ -87,7 +87,7 @@ class Database:
         mapper_registry.metadata.create_all(self.engine)
         mapper_registry.map_imperatively(self.Original_Table, originalTable)
 
-        for i in range(df[49425:].shape[0]):
+        for i in range(df.shape[0]):
             item = insert(self.Original_Table).values({str(key): str(df.loc[i][key]) for key in df.loc[i].keys()} )
             self.session.execute(item)
             self.session.commit()
