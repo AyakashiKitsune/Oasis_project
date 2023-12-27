@@ -1,8 +1,8 @@
-from typing import Mapping
-from sqlalchemy import URL, Column, Integer, MetaData, column ,create_engine, insert, select,Table
-from sqlalchemy.orm import sessionmaker,registry
+from sqlalchemy import URL,create_engine, select
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-import pandas as pd
+
+from ..utils.utils import pd
 
 from ..models.product_table_model import Product
 from ..models.sales_table_model import Sales
@@ -10,13 +10,17 @@ from ..models.inventory_table_model import Inventory
 
 from ..utils.utils import Base
 
+with open("password.txt") as f:
+    password = f.readline()
+
+print(password)
 class Database:
     database_name = "OasisBase"
     sales_columns = ['name', 'price','category', 'date', 'sale' ]
     inventory_columns = ['name', 'price','category', 'date', 'current_stock','max_stock','min_stock' ]
     connection = False
 
-    def __init__(self,host="localhost",password="AyakashiKitsune#9262"):
+    def __init__(self,host="localhost",password=password):
         # make a link url to backend
         url = URL.create(
             drivername="mysql+pymysql",
@@ -55,7 +59,6 @@ class Database:
                 Inventory.__table__ # child
             ]) # type: ignore
         
-
     #create table and imports the table
     def importTable(self, filename):
         df = pd.read_csv(f'uploads/{filename}',index_col=[0])
@@ -69,8 +72,6 @@ class Database:
         del(df)
         return null_value_table
             
-        
-
     # return a dictionary/json {column_name, table} 
     def get_null_rows(self,df):
         null_clms = []
@@ -88,10 +89,6 @@ class Database:
         del(null_clms)
         return tables
 
-
-    
-
-
     # insert table to any table just make a class like Inventory(), Product(), Sales()
     def insert(self,obj):
         with self.session as con:
@@ -104,6 +101,7 @@ class Database:
         with self.session as con:
             res = con.scalar(select(Product))
             print(res)
+    
     # make custom commands through text
     def custom_command(self, command):
         with self.session as con:

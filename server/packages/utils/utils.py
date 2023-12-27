@@ -2,8 +2,12 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import DateTime,String,Integer,Double, Boolean,Time
-from datetime import datetime
+
+class Constants:
+    supported_data = ['csv','xls']
+    UPLOAD_FOLDER = 'server/uploads/'
+    MODELS = 'server/datamodels/'
+    DATABASE = 'server/database/'
 
 class Base(DeclarativeBase):
     pass
