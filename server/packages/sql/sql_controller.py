@@ -55,9 +55,6 @@ class Database:
                 Inventory.__table__ # child
             ]) # type: ignore
         
-    # base of original table
-    class Original_Table:
-        pass
 
     #create table and imports the table
     def importTable(self, filename):
