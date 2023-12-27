@@ -5,11 +5,6 @@ archive
 datasets
 modeling-env
 models
-server/packages/machine_learn_libs/__pycache__
-server/packages/models/__pycache__
-server/packages/sql/__pycache__
-server/packages/utils/__pycache__
-server/test/__pycache__
 server/test/chunked
 server/test/newlongIowaLiqourfixed.csv
 server/test/sampledatafoodsales.xlsx
@@ -18,3 +13,5 @@ lookup_resultmodel.csv
 lookup.csv
 models.json
 realtransformer.ipynb
+__pycache__/
+password.txt
