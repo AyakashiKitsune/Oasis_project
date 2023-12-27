@@ -8,7 +8,7 @@ from ..models.product_table_model import Product
 from ..models.sales_table_model import Sales
 from ..models.inventory_table_model import Inventory
 
-from ..utils.utils import Base,prettified_word,is_date,splitRemoveEndline,pandasToSQLdtypes
+from ..utils.utils import Base
 
 class Database:
     database_name = "OasisBase"
@@ -54,43 +54,22 @@ class Database:
                 Sales.__table__,    # child
                 Inventory.__table__ # child
             ]) # type: ignore
-
-    #csv support
-    #gets the columns and its formats 
-    def getColumnsfromCSVFile(self,filename): 
-        df = pd.read_csv(f'uploads/{filename}',index_col=[0])
-        columns = prettified_word([col.lower() for col in df.dtypes.keys()])
-        df.columns = columns
-        df['date'] = pd.to_datetime(df['date'])
-        formats = [str(df.dtypes[i]) for i in df.dtypes.keys() ]
-        return  df,columns,formats
-
+        
+    # base of original table
     class Original_Table:
         pass
+
     #create table and imports the table
     def importTable(self, filename):
-        df,column,format = self.getColumnsfromCSVFile(filename)
-        
+        df = pd.read_csv(f'uploads/{filename}',index_col=[0])
+        # shortest way to get make csv to sql table
+        df.to_sql(
+            name= "original_table",
+            con=self.engine.connect()           
+        )  
         # these are the loss rows because it has null values
         null_value_table = self.get_null_rows(df)
-        
-        df.dropna(inplace=True)
-        df.reset_index(drop=True,inplace=True)
-        
-        mapper_registry = registry()     
-        originalTable = Table(
-            "original_table",
-            mapper_registry.metadata,
-            Column("id", Integer, primary_key=True,autoincrement=True, nullable=False),
-            *[Column(column[i],pandasToSQLdtypes(format[i]),) for i in range(len(column))]
-        )
-        mapper_registry.metadata.create_all(self.engine)
-        mapper_registry.map_imperatively(self.Original_Table, originalTable)
-
-        for i in range(df.shape[0]):
-            item = insert(self.Original_Table).values({str(key): str(df.loc[i][key]) for key in df.loc[i].keys()} )
-            self.session.execute(item)
-            self.session.commit()
+        del(df)
         return null_value_table
             
         
