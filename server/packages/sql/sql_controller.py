@@ -3,22 +3,27 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
 from ..utils.utils import pd
+from ..utils.utils import Base
 
 from ..models.product_table_model import Product
 from ..models.sales_table_model import Sales
 from ..models.inventory_table_model import Inventory
 
-from ..utils.utils import Base
 
 with open("password.txt") as f:
     password = f.readline()
 
-print(password)
 class Database:
+    __instance = None
     database_name = "OasisBase"
     sales_columns = ['name', 'price','category', 'date', 'sale' ]
     inventory_columns = ['name', 'price','category', 'date', 'current_stock','max_stock','min_stock' ]
     connection = False
+
+    def __new__(cls):
+        if cls.__instance == None:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
 
     def __init__(self,host="localhost",password=password):
         # make a link url to backend
@@ -63,10 +68,13 @@ class Database:
     def importTable(self, filename):
         df = pd.read_csv(f'uploads/{filename}',index_col=[0])
         # shortest way to get make csv to sql table
-        df.to_sql(
-            name= "original_table",
-            con=self.engine.connect()           
-        )  
+        try:
+            df.to_sql(
+                name= "original_table",
+                con=self.engine.connect()           
+            )
+        except:
+            pass 
         # these are the loss rows because it has null values
         null_value_table = self.get_null_rows(df)
         del(df)
@@ -83,9 +91,10 @@ class Database:
             tables.append(
                 {
                     "column_name" : col,
-                    "table" : df[df[col].isnull()]
+                    "table" : df[df[col].isnull()].to_dict()
                 }
             )
+        print(tables)
         del(null_clms)
         return tables
 
@@ -104,6 +113,10 @@ class Database:
     
     # make custom commands through text
     def custom_command(self, command):
-        with self.session as con:
-            res = con.execute(text(command))
-            print(command)
+        res = self.session.execute(text(command))
+        return res
+    
+    def show_tables(self):
+        return self.custom_command("show tables").all()
+        
+database = Database()

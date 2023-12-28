@@ -5,9 +5,9 @@ from sqlalchemy.orm import DeclarativeBase
 
 class Constants:
     supported_data = ['csv','xls']
-    UPLOAD_FOLDER = 'server/uploads/'
-    MODELS = 'server/datamodels/'
-    DATABASE = 'server/database/'
+    UPLOAD_FOLDER = 'uploads/'
+    MODELS = 'datamodels/'
+    DATABASE = 'database/'
 
 class Base(DeclarativeBase):
     pass
