@@ -11,11 +11,18 @@ data = {
 # response = requests.post(destination,json=data,)
 # print(response)
 
+from sqlalchemy import text
 from packages.sql import sql_controller
 
 db = sql_controller.Database()
-db.importTable("aa.csv")
+res = db.custom_command("""SELECT column_name
+FROM information_schema.columns
+WHERE table_schema = 'OasisBase' 
+  AND table_name = 'original_table'; 
+""").scalars()
 
+for i in res:
+    print(i)
 
 # def line_analysis(lines):
 #     chopped = [line.replace('\n','').split(',') for line in lines]
