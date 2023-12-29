@@ -1,3 +1,4 @@
+import itertools
 from numpy import int64
 from sqlalchemy import column
 from ..utils.utils import pd,np,tf, normalizer
@@ -279,29 +280,26 @@ unitable_columns = ['', 'Expiration date', 'category', 'date', 'name', 'price', 
 
 # beta test
 def auto_column_test_predict(columns):
-
     columns_removed_signs = remove_signs(columns)
-    columns_splitted_space = [col.split(' ') for col in columns_removed_signs]
-    print("split",columns_splitted_space)
-    # [[address, number],[]]
+    columns_splitted_space = [{ "old" : col_obj['old'],
+                                "new" : col_obj['new'].split(' ')}  
+                                for col_obj in columns_removed_signs]
+    
     columns_encoded = []
-    # print(columns)
     # making bunch of zeros and ones, with one hot encoder machine learning technique
     for column_name in columns_splitted_space:
         # [address, number]
         # 0,71
         number_token = []
         
-        for word in column_name:
+        for word in column_name['new']:
             if word in word_bank:
                 number_token.append(word_bank[word.lower()]) # append a number from word bank
         columns_encoded.append({
-            "column" : column_name,
+            'old'    : column_name['old'],
+            "column" : column_name['new'],
             'value'  : [one_hot_encoded(number_token)]
         })
-
-        # print(column_name,number_token)
-
 
     model_yeszero = tf.keras.models.load_model('../models/unitable-model/unitable-classifier-v2-yeszero.keras')
     # model_nozero = tf.keras.models.load_model('../models/unitable-model/unitable-classifier-v2-nozero.keras')
@@ -312,14 +310,29 @@ def auto_column_test_predict(columns):
         res = model_yeszero.predict(encoded_column['value'])
         decoded = one_hot_decoded(res[0])
         result.append({
+            'old' : encoded_column['old'],
             'actual_column_name' : encoded_column['column'],
             'actual_encoded' : encoded_column['value'][0],
             'predicted' : res[0].tolist(),
             'predicted_decoded' : decoded,
             'predicted_decoded_str' : unitable_columns[decoded],
         })
-    print(result)
-    return result
+
+    filtered_result = []
+    for item in result:
+        if item['predicted_decoded_str'] != '':
+            filtered_result.append({
+                'old'   :   item['old'],
+                'column' : ' '.join(item['actual_column_name']),
+                'predicted' : item['predicted_decoded_str']
+            })
+    del(result)
+
+    grouped = [{'key_column' : k, 'values' : list(g)} for k, g in itertools.groupby(sorted(filtered_result, key = lambda x : x['predicted']),lambda x: x['predicted'])]
+    for i in grouped:
+        print(i['key_column'], i['values'])
+
+    return grouped
 
 def remove_signs(columns):
     signs = "(),.-_%$*&#@!}{|\\/<>;:"
@@ -328,13 +341,15 @@ def remove_signs(columns):
         word = col
         for sign in signs:
             word = word.replace(sign,' ').strip()
-        new_columns.append(word)
+        new_columns.append({
+            'old' : col,
+            "new" : word
+        })
     print(new_columns)
     return new_columns
 
 def one_hot_decoded(result):
     return int(np.where(result == np.max(result))[0][0])
-
 
 def one_hot_encoded(number_token):
     if len(number_token) <= 0:
@@ -343,4 +358,4 @@ def one_hot_encoded(number_token):
 
 # test
 # remove_signs(['name_label(),.-_%$*&#@!}{|\\/<>;:'])
-auto_column_test_predict(['name_label','product'])             
+# auto_column_test_predict(['name_label','product', 'price', 'date', 'sales', 'sale', 'sold_count', 'expiry','classification'])             

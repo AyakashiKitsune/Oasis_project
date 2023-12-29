@@ -48,12 +48,13 @@ def setup_predict_columns():
     # res are list[] of columns
     predicted_columns = auto_column_test_predict(column_list)
     # keys inside ^^^
+    # old
     # 'actual_column_name' 
     # 'actual_encoded' 
     # 'predicted' 
     # 'predicted_decoded' 
     # 'predicted_decoded_str' 
-    
+
     return jsonify(predicted_columns)
 
 
