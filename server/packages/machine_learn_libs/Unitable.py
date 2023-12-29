@@ -1,4 +1,5 @@
 import itertools
+from joblib import Parallel, delayed
 from numpy import int64
 from sqlalchemy import column
 from ..utils.utils import pd,np,tf, normalizer
@@ -305,6 +306,7 @@ def auto_column_test_predict(columns):
     # model_nozero = tf.keras.models.load_model('../models/unitable-model/unitable-classifier-v2-nozero.keras')
     
     result = []
+    # result = Parallel(n_jobs=-1)(delayed(predict_and_decode)(encoded_column, model_yeszero) for encoded_column in columns_encoded)
 
     for encoded_column in columns_encoded:
         res = model_yeszero.predict(encoded_column['value'])
@@ -345,8 +347,20 @@ def remove_signs(columns):
             'old' : col,
             "new" : word
         })
-    print(new_columns)
     return new_columns
+
+# possible code
+# def predict_and_decode(encoded_column, model):
+#     res = model.predict(encoded_column['value'])
+#     decoded = one_hot_decoded(res[0])  # Replace this function with your decoding logic
+#     return {
+#         'old': encoded_column['old'],
+#         'actual_column_name': encoded_column['column'],
+#         'actual_encoded': encoded_column['value'][0],
+#         'predicted': res[0].tolist(),
+#         'predicted_decoded': decoded,
+#         'predicted_decoded_str': unitable_columns[decoded],  # Assuming unitable_columns is defined
+#     }
 
 def one_hot_decoded(result):
     return int(np.where(result == np.max(result))[0][0])

@@ -1,5 +1,6 @@
 from select import select
 from flask import Blueprint,request,jsonify
+from sqlalchemy import text
 from werkzeug.utils import secure_filename
 from packages.sql.sql_controller import database,Database
 from packages.utils.utils import Constants
@@ -48,14 +49,13 @@ def setup_predict_columns():
     # res are list[] of columns
     predicted_columns = auto_column_test_predict(column_list)
     # keys inside ^^^
-    # old
-    # 'actual_column_name' 
-    # 'actual_encoded' 
-    # 'predicted' 
-    # 'predicted_decoded' 
-    # 'predicted_decoded_str' 
-
-    return jsonify(predicted_columns)
+    # 'key_column'
+    # 'values'
+    keys = [item['values'][0]['old'] for item in predicted_columns]
+    query_sample = database.session.execute(text("""SELECT {} FROM original_table limit 10""".format(*keys))).fetchall()
+    for i in query_sample:
+        print(i)
+    return jsonify([{'column' : keys[i],'samples' : [x[i] for x in query_sample]} for i in range(len(keys))])
 
 
 

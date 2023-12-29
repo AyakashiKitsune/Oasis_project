@@ -15,14 +15,9 @@ from sqlalchemy import text
 from packages.sql import sql_controller
 
 db = sql_controller.Database()
-res = db.custom_command("""SELECT column_name
-FROM information_schema.columns
-WHERE table_schema = 'OasisBase' 
-  AND table_name = 'original_table'; 
-""").scalars()
+res = db.session.execute(text("""SELECT label,name FROM original_table limit 10;""")).fetchall()
+print([x for x in res[0]])
 
-for i in res:
-    print(i)
 
 # def line_analysis(lines):
 #     chopped = [line.replace('\n','').split(',') for line in lines]
