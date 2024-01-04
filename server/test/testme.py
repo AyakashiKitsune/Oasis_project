@@ -11,14 +11,20 @@ data = {
 # response = requests.post(destination,json=data,)
 # print(response)
 
-from sqlalchemy import text
-from packages.sql import sql_controller
+# from sqlalchemy import text
+# from packages.sql import sql_controller
 
-db = sql_controller.Database()
-res = db.session.execute(text("""SELECT label,name FROM original_table limit 10;""")).fetchall()
-print([x for x in res[0]])
+# db = sql_controller.Database()
+# db.importTableOriginalTable('aa.csv')
+json = {
+    'name' : 'val',
+    'key' : 'val'
+}
 
-
+print(set(json.values()))
+# res = db.session.execute(text("""SELECT label,name FROM original_table limit 10;""")).fetchall()
+# for i in res:
+#     print(res[0])
 # def line_analysis(lines):
 #     chopped = [line.replace('\n','').split(',') for line in lines]
 #     return chopped

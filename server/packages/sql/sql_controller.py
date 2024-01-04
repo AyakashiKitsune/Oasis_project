@@ -1,3 +1,4 @@
+from os import replace
 from sqlalchemy import URL,create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
@@ -16,7 +17,7 @@ with open("password.txt") as f:
 class Database:
     __instance = None
     database_name = "OasisBase"
-    sales_columns = ['name', 'price','category', 'date', 'sale' ]
+    sales_columns = ['date','name', 'price','category', 'sale' ]
     inventory_columns = ['name', 'price','category', 'date', 'current_stock','max_stock','min_stock' ]
     connection = False
 
@@ -65,7 +66,7 @@ class Database:
             ]) # type: ignore
         
     #create table and imports the table
-    def importTable(self, filename):
+    def importTableOriginalTable(self, filename):
         df = pd.read_csv(f'uploads/{filename}',index_col=[0])
         # shortest way to get make csv to sql table
         try:
@@ -79,7 +80,14 @@ class Database:
         null_value_table = self.get_null_rows(df)
         del(df)
         return null_value_table
-            
+
+    def importTableOasisBase(self,columns):
+        df = pd.read_sql_table(table_name="original_table",con=self.engine.connect())
+        dropcols = set(df.columns.tolist()) - set(columns.values())
+        df.drop(columns=[*dropcols],inplace=True)
+        df.rename(columns=columns)
+        df.to_sql(name=self.database_name,con=self.engine.connect(),if_exists='replace')
+
     # return a dictionary/json {column_name, table} 
     def get_null_rows(self,df):
         null_clms = []

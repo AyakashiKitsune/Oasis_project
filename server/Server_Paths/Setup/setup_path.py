@@ -31,7 +31,7 @@ def setup_send_existing():
 def setup_csv_to_sql():
     res = request.json
     filename = res['filename']
-    nullcolumns = database.importTable(filename)
+    nullcolumns = database.importTableOriginalTable(filename)
     if nullcolumns:
         return nullcolumns
     return jsonify({
@@ -39,8 +39,8 @@ def setup_csv_to_sql():
         "nulls": 0
     })
 
-@Setup_path.route('/predict_columns',methods=['GET'])
-def setup_predict_columns():
+@Setup_path.route('/auto_columns',methods=['GET'])
+def setup_auto_columns():
     column_list = database.custom_command("""SELECT column_name
                             FROM information_schema.columns
                             WHERE table_schema = 'OasisBase' 
@@ -55,8 +55,33 @@ def setup_predict_columns():
     query_sample = database.session.execute(text("""SELECT {} FROM original_table limit 10""".format(*keys))).fetchall()
     for i in query_sample:
         print(i)
-    return jsonify([{'column' : keys[i],'samples' : [x[i] for x in query_sample]} for i in range(len(keys))])
+    return jsonify(
+            [{'column' : keys[col],'samples' : [row[col] for row in query_sample]} for col in range(len(keys))]
+        )
 
+@Setup_path.route('/ten_column_sample',methods=['GET'])
+def setup_ten_columns():
+    column_list = database.custom_command("""SELECT column_name
+                            FROM information_schema.columns
+                            WHERE table_schema = 'OasisBase' 
+                            AND table_name = 'original_table';
+                            """).scalars()
+    query_sample = database.session.execute(text("""SELECT {} FROM original_table limit 10""".format(*column_list))).fetchall()
+    return jsonify(
+            [{'column' : column_list[col],'samples' : [row[col] for row in query_sample]} for col in range(len(column_list))]
+        )
 
-
+@Setup_path.route('/manual_column',methods=['POST'])
+def setup_manual_columns():
+    response = request.json
+    """
+        {
+            columns : {
+                name : "",
+                price : "clmn name"
+            }
+        } 
+    """
+    columns = response['columns']
+    database.importTableOasisBase(columns)
     
