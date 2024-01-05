@@ -4,7 +4,8 @@
 archive
 datasets
 modeling-env
-models
+models/sold-per-item-model
+models/unitable-model
 server/test/chunked
 server/test/newlongIowaLiqourfixed.csv
 server/test/sampledatafoodsales.xlsx

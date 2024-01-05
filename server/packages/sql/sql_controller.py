@@ -18,7 +18,7 @@ class Database:
     __instance = None
     database_name = "OasisBase"
     sales_columns = ['date','name', 'price','category', 'sale' ]
-    inventory_columns = ['name', 'price','category', 'date', 'current_stock','max_stock','min_stock' ]
+    inventory_columns = ['date','name', 'price','category',  'current_stock','max_stock','min_stock' ]
     connection = False
 
     def __new__(cls):
@@ -82,11 +82,18 @@ class Database:
         return null_value_table
 
     def importTableOasisBase(self,columns):
+        # read the old table
         df = pd.read_sql_table(table_name="original_table",con=self.engine.connect())
+        # make a diff, whats left will drop
         dropcols = set(df.columns.tolist()) - set(columns.values())
+        # drop it
         df.drop(columns=[*dropcols],inplace=True)
+        # rename them the rest
         df.rename(columns=columns)
-        df.to_sql(name=self.database_name,con=self.engine.connect(),if_exists='replace')
+        # save it
+        df.to_sql(name="Sales",con=self.engine.connect(),if_exists='replace')
+        del(df)
+
 
     # return a dictionary/json {column_name, table} 
     def get_null_rows(self,df):
@@ -116,7 +123,7 @@ class Database:
     # reads the tables in the database
     def readTable(self,tablename="",):
         with self.session as con:
-            res = con.scalar(select(Product))
+            res = con.scalar(select())
             print(res)
     
     # make custom commands through text
@@ -126,5 +133,3 @@ class Database:
     
     def show_tables(self):
         return self.custom_command("show tables").all()
-        
-database = Database()
