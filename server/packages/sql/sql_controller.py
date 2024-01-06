@@ -1,12 +1,11 @@
 from os import replace
-from sqlalchemy import URL,create_engine, select
+from sqlalchemy import URL, between,create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
 from ..utils.utils import pd
 from ..utils.utils import Base
 
-from ..models.product_table_model import Product
 from ..models.sales_table_model import Sales
 from ..models.inventory_table_model import Inventory
 
@@ -17,9 +16,11 @@ with open("password.txt") as f:
 class Database:
     __instance = None
     database_name = "OasisBase"
-    sales_columns = ['date','name', 'price','category', 'sale' ]
-    inventory_columns = ['date','name', 'price','category',  'current_stock','max_stock','min_stock' ]
-    connection = False
+    SALES__ = "Sales"
+    INVENTORY__ = "Inventory"
+    # sales_columns = ['date','name', 'price','category', 'sale' ]
+    # inventory_columns = ['date','name', 'price','category',  'current_stock','max_stock','min_stock' ]
+    # connection = False
 
     def __new__(cls):
         if cls.__instance == None:
@@ -60,7 +61,6 @@ class Database:
         Base.metadata.create_all(
             self.engine,
             tables=[
-                Product.__table__,  # parent 
                 Sales.__table__,    # child
                 Inventory.__table__ # child
             ]) # type: ignore
@@ -94,7 +94,6 @@ class Database:
         df.to_sql(name="Sales",con=self.engine.connect(),if_exists='replace')
         del(df)
 
-
     # return a dictionary/json {column_name, table} 
     def get_null_rows(self,df):
         null_clms = []
@@ -119,13 +118,19 @@ class Database:
             con.add(obj)
             con.commit()
         pass
-
-    # reads the tables in the database
-    def readTable(self,tablename="",):
-        with self.session as con:
-            res = con.scalar(select())
-            print(res)
     
+    def readSalesOnDate(self, YYYYMMDD) -> list:
+        return self.session.execute(
+            select(Sales)
+            .where(Sales.date == YYYYMMDD)
+            ).scalars().to_dict()
+
+    def readSalesBetweendates(self,fromdate,todate) -> list:
+        return self.session.execute(
+            select(Sales)
+            .where(between(Sales.date,fromdate,todate))
+            ).scalars().to_dict()
+
     # make custom commands through text
     def custom_command(self, command):
         res = self.session.execute(text(command))

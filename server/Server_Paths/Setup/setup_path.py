@@ -17,6 +17,7 @@ def setup_create_datebase():
 
     return "createdb"
 
+# step one aa mm
 @Setup_path.route('/send_existing',methods=['POST'])
 def setup_send_existing():
     file = request.files['file']
@@ -27,6 +28,7 @@ def setup_send_existing():
         'message' : 'file saved'
     }),200
 
+# step two aa mm
 @Setup_path.route('/csv_to_sql',methods=['POST'])
 def setup_csv_to_sql():
     res = request.json
@@ -38,7 +40,7 @@ def setup_csv_to_sql():
         'message' : "ok",
         "nulls": 0
     })
-
+# step three aa
 @Setup_path.route('/auto_columns',methods=['GET'])
 def setup_auto_columns():
     column_list = Database.custom_command("""SELECT column_name
@@ -59,6 +61,7 @@ def setup_auto_columns():
             [{'column' : keys[col],'samples' : [row[col] for row in query_sample]} for col in range(len(keys))]
         )
 
+# step three mm
 @Setup_path.route('/ten_column_sample',methods=['GET'])
 def setup_ten_columns():
     column_list = Database.custom_command("""SELECT column_name
@@ -71,6 +74,7 @@ def setup_ten_columns():
             [{'column' : column_list[col],'samples' : [row[col] for row in query_sample]} for col in range(len(column_list))]
         )
 
+# step 4 aa mm
 # can be use when the auto is perfect
 @Setup_path.route('/manual_column',methods=['POST'])
 def setup_manual_columns():

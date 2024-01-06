@@ -18,12 +18,28 @@ class Sales(Base):
     price       = mapped_column(nullable=False,type_=sqltypes.Integer)
     sale        = mapped_column(nullable=False,type_= sqltypes.Double)
     
-    products : Mapped[List["Product"]] = relationship("Product",back_populates="sales")
+    # products : Mapped[List["Product"]] = relationship("Product",back_populates="sales")
     
     sales_columns = ['date','name', 'price','category', 'sale' ]
-    def __repr__(self) -> str:
-        return f"Product(id={self.id}, product_id={self.product_id}, date={self.date}, sale={self.sale})"
+    def __repr__(self):
+        return {
+            "id"   : self.id, 
+            "date" : self.date,
+            "name" : self.name,
+            'category' : self.category,
+            'price' : self.price,
+            'sale' : self.sale
+        }
 
+    def to_dict(self):
+        return {
+            "id"   : self.id, 
+            "date" : self.date,
+            "name" : self.name,
+            'category' : self.category,
+            'price' : self.price,
+            'sale' : self.sale
+        }
 
 
 

@@ -22,6 +22,31 @@ json = {
 }
 
 print(set(json.values()))
+
+
+
+
+
+
+
+
+
+from sqlalchemy import select,text
+from packages.models.sales_table_model import Sales
+from packages.sql.sql_controller import Database
+
+stmt = select(Sales)
+res = Database().session.execute(stmt).scalars()
+
+# print(res.to_dict())
+for i in res:
+    print(i.to_dict())
+# for k in res.keys:
+#     print(k,':',res[k]) 
+
+
+
+
 # res = db.session.execute(text("""SELECT label,name FROM original_table limit 10;""")).fetchall()
 # for i in res:
 #     print(res[0])
