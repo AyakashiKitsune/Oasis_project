@@ -21,12 +21,14 @@ class Database:
     # sales_columns = ['date','name', 'price','category', 'sale' ]
     # inventory_columns = ['date','name', 'price','category',  'current_stock','max_stock','min_stock' ]
     # connection = False
-
+    
+    # sigleton class 
     def __new__(cls):
         if cls.__instance == None:
             cls.__instance = super().__new__(cls)
         return cls.__instance
-
+    
+    # constructor
     def __init__(self,host="localhost",password=password):
         # make a link url to backend
         url = URL.create(
@@ -65,7 +67,7 @@ class Database:
                 Inventory.__table__ # child
             ]) # type: ignore
         
-    #create table and imports the table
+    # import the original table to original_table table as old table
     def importTableOriginalTable(self, filename):
         df = pd.read_csv(f'uploads/{filename}',index_col=[0])
         # shortest way to get make csv to sql table
@@ -81,6 +83,7 @@ class Database:
         del(df)
         return null_value_table
 
+    # original_table to sales table
     def importTableOasisBase(self,columns):
         # read the old table
         df = pd.read_sql_table(table_name="original_table",con=self.engine.connect())
@@ -112,19 +115,21 @@ class Database:
         del(null_clms)
         return tables
 
-    # insert table to any table just make a class like Inventory(), Product(), Sales()
+    # insert table to any table just make a class like Inventory(), Sales()
     def insert(self,obj):
         with self.session as con:
             con.add(obj)
             con.commit()
         pass
     
+    # read sales on specific date 
     def readSalesOnDate(self, YYYYMMDD) -> list:
         return self.session.execute(
             select(Sales)
             .where(Sales.date == YYYYMMDD)
             ).scalars().to_dict()
 
+    # read sales on between dates
     def readSalesBetweendates(self,fromdate,todate) -> list:
         return self.session.execute(
             select(Sales)
@@ -135,6 +140,3 @@ class Database:
     def custom_command(self, command):
         res = self.session.execute(text(command))
         return res
-    
-    def show_tables(self):
-        return self.custom_command("show tables").all()
