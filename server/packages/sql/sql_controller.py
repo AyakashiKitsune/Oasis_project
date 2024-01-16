@@ -71,6 +71,9 @@ class Database:
     def importTableOriginalTable(self, filename):
         df = pd.read_csv(f'uploads/{filename}',index_col=[0])
         df.reset_index(drop=True,inplace=True)
+        # these are the loss rows because it has null values
+        null_value_table = self.get_null_rows(df)
+        df.dropna(inplace=True,)
         # shortest way to get make csv to sql table
         try:
             df.to_sql(
@@ -82,8 +85,6 @@ class Database:
             )
         except:
             pass 
-        # these are the loss rows because it has null values
-        null_value_table = self.get_null_rows(df)
         del(df)
         return null_value_table
 
