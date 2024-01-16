@@ -6,6 +6,7 @@ datasets
 modeling-env
 models/sold-per-item-model
 models/unitable-model
+model
 server/test/chunked
 server/test/newlongIowaLiqourfixed.csv
 server/test/sampledatafoodsales.xlsx
