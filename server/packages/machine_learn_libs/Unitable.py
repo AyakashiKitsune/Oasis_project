@@ -287,7 +287,6 @@ def auto_column_test_predict(columns):
     columns_splitted_space = [{ "old" : col_obj['old'],
                                 "new" : col_obj['new'].split(' ')}  
                                 for col_obj in columns_removed_signs]
-    
     columns_encoded = []
     # making bunch of zeros and ones, with one hot encoder machine learning technique
     for column_name in columns_splitted_space:
@@ -296,8 +295,10 @@ def auto_column_test_predict(columns):
         number_token = []
         
         for word in column_name['new']:
+            word = word.lower()
             if word in word_bank:
-                number_token.append(word_bank[word.lower()]) # append a number from word bank
+                number_token.append(word_bank[word]) # append a number from word bank
+        
         columns_encoded.append({
             'old'    : column_name['old'],
             "column" : column_name['new'],

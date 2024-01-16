@@ -13,6 +13,5 @@ server/uploads/*
 lookup_resultmodel.csv
 lookup.csv
 models.json
-realtransformer.ipynb
 __pycache__/
 password.txt

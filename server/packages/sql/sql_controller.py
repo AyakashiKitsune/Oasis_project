@@ -70,11 +70,15 @@ class Database:
     # import the original table to original_table table as old table
     def importTableOriginalTable(self, filename):
         df = pd.read_csv(f'uploads/{filename}',index_col=[0])
+        df.reset_index(drop=True,inplace=True)
         # shortest way to get make csv to sql table
         try:
             df.to_sql(
-                name= "original_table",
-                con=self.engine.connect()           
+                name="original_table",
+                con=self.engine.connect(),
+                if_exists='replace',
+                chunksize=int(len(df)/10),
+                index=False    
             )
         except:
             pass 
@@ -85,16 +89,18 @@ class Database:
 
     # original_table to sales table
     def importTableOasisBase(self,columns):
+        # ['date','name', 'price','category', 'sale' ]
         # read the old table
         df = pd.read_sql_table(table_name="original_table",con=self.engine.connect())
         # make a diff, whats left will drop
-        dropcols = set(df.columns.tolist()) - set(columns.values())
+        dropcols = set(df.columns.tolist()) - set(list(columns.keys()))
         # drop it
         df.drop(columns=[*dropcols],inplace=True)
         # rename them the rest
-        df.rename(columns=columns)
+        df.rename(columns=columns,inplace=True)
+        df['date']  = pd.to_datetime(df["date"])
         # save it
-        df.to_sql(name="Sales",con=self.engine.connect(),if_exists='replace')
+        df.to_sql(name="Sales",con=self.engine.connect(),if_exists='replace',index=False,chunksize=int(len(df)/10))
         del(df)
 
     # return a dictionary/json {column_name, table} 
@@ -135,6 +141,11 @@ class Database:
             select(Sales)
             .where(between(Sales.date,fromdate,todate))
             ).scalars().to_dict()
+
+    def distinctValuesColumn(self):
+        return self.session.execute(
+            select(Sales.name).distinct()
+        ).scalars().to_dict()
 
     # make custom commands through text
     def custom_command(self, command):

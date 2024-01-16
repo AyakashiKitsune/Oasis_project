@@ -14,7 +14,6 @@ def home():
 
 @Setup_path.route('/create_Database',methods=['POST'])
 def setup_create_datebase():
-
     return "createdb"
 
 # step one aa mm
@@ -33,28 +32,28 @@ def setup_send_existing():
 def setup_csv_to_sql():
     res = request.json
     filename = res['filename']
-    nullcolumns = Database.importTableOriginalTable(filename)
+    nullcolumns = Database().importTableOriginalTable(filename)
     if nullcolumns:
         return nullcolumns
     return jsonify({
-        'message' : "ok",
+        'message' : "no null/blank data",
         "nulls": 0
     })
 # step three aa
 @Setup_path.route('/auto_columns',methods=['GET'])
 def setup_auto_columns():
-    column_list = Database.custom_command("""SELECT column_name
-                            FROM information_schema.columns
-                            WHERE table_schema = 'OasisBase' 
-                            AND table_name = 'original_table';
-                            """).scalars()
+    column_list = Database().custom_command(command="""SELECT column_name 
+                                            FROM information_schema.columns 
+                                            WHERE table_schema = 'OasisBase' 
+                                            AND table_name = 'original_table';"""
+                                            ).scalars().fetchall()
     # res are list[] of columns
     predicted_columns = auto_column_test_predict(column_list)
     # keys inside ^^^
     # 'key_column'
     # 'values'
     keys = [item['values'][0]['old'] for item in predicted_columns]
-    query_sample = Database.session.execute(text("""SELECT {} FROM original_table limit 10""".format(*keys))).fetchall()
+    query_sample = Database().session.execute(text("""SELECT {} FROM original_table limit 10""".format(*keys))).fetchall()
     for i in query_sample:
         print(i)
     return jsonify(
@@ -64,12 +63,13 @@ def setup_auto_columns():
 # step three mm
 @Setup_path.route('/ten_column_sample',methods=['GET'])
 def setup_ten_columns():
-    column_list = Database.custom_command("""SELECT column_name
+    column_list = Database().custom_command("""SELECT column_name
                             FROM information_schema.columns
                             WHERE table_schema = 'OasisBase' 
                             AND table_name = 'original_table';
                             """).scalars()
-    query_sample = Database.session.execute(text("""SELECT {} FROM original_table limit 10""".format(*column_list))).fetchall()
+    
+    query_sample = Database().session.execute(text("""SELECT {} FROM original_table limit 10""".format(*column_list))).fetchall()
     return jsonify(
             [{'column' : column_list[col],'samples' : [row[col] for row in query_sample]} for col in range(len(column_list))]
         )
@@ -82,11 +82,12 @@ def setup_manual_columns():
     """
         {
             columns : {
+                # key is the old, value is the newname
                 name : "",
                 price : "clmn name"
             }
         } 
     """
     columns = response['columns']
-    Database.importTableOasisBase(columns)
+    Database().importTableOasisBase(columns)
     
