@@ -1,5 +1,5 @@
 from os import replace
-from sqlalchemy import URL, between,create_engine, select
+from sqlalchemy import URL, between,create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
@@ -133,23 +133,40 @@ class Database:
         pass
     
     # read sales on specific date 
-    def readSalesOnDate(self, YYYYMMDD):
-        return self.session.execute(
-            select(Sales)
-            .where(Sales.date == YYYYMMDD)
-            ).scalars().all()
+    def readSalesOnDate(self, YYYYMMDD,wholesale=False):
+        if wholesale:
+            request = self.session.execute(
+                select(Sales.date, func.sum(Sales.sale).label('sum'))
+                .where(Sales.date == YYYYMMDD)
+            ).fetchone()
+            return request
+        else: 
+            request = self.session.execute(
+                select(Sales)
+                .where(Sales.date == YYYYMMDD)
+            ).scalars()
+            return [i.to_dict() for i in request]
 
     # read sales on between dates
-    def readSalesBetweendates(self,fromdate,todate):
-        return self.session.execute(
-            select(Sales)
-            .where(between(Sales.date,fromdate,todate))
-            ).scalars().all()
+    def readSalesBetweendates(self,fromdate,todate,wholesale=False):
+        if wholesale:
+            request = self.session.execute(
+                select(Sales.date, func.sum(Sales.sale))
+                .where(between(Sales.date,fromdate,todate))
+                .group_by(Sales.date)
+            ).fetchall()
+            return request #tuple ()
+        else:
+            request = self.session.execute(
+                select(Sales)
+                .where(between(Sales.date,fromdate,todate))
+            ).scalars()
+            return [i.to_dict() for i in request] #list
 
     def distinctValuesColumn(self):
         return self.session.execute(
             select(Sales.name).distinct()
-        ).scalars().to_dict()
+        ).scalars().all()
 
     # make custom commands through text
     def custom_command(self, command):
