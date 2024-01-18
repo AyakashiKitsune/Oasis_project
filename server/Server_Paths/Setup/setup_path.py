@@ -52,13 +52,9 @@ def setup_auto_columns():
     # keys inside ^^^
     # 'key_column'
     # 'values'
-    keys = [item['values'][0]['old'] for item in predicted_columns]
-    query_sample = Database().session.execute(text("""SELECT {} FROM original_table limit 10""".format(*keys))).fetchall()
-    for i in query_sample:
-        print(i)
-    return jsonify(
-            [{'column' : keys[col],'samples' : [row[col] for row in query_sample]} for col in range(len(keys))]
-        )
+    keys = [f'`{item["values"][0]["old"]}`' for item in predicted_columns]
+    query_sample = Database().session.execute(text("""SELECT {} FROM original_table LIMIT 10""".format(','.join(keys)))).fetchall()
+    return [{'column' : keys[col],'samples' : [row[col] for row in query_sample]} for col in range(len(keys))]
 
 # step three mm
 @Setup_path.route('/ten_column_sample',methods=['GET'])
@@ -70,9 +66,7 @@ def setup_ten_columns():
                             """).scalars()
     
     query_sample = Database().session.execute(text("""SELECT {} FROM original_table limit 10""".format(*column_list))).fetchall()
-    return jsonify(
-            [{'column' : column_list[col],'samples' : [row[col] for row in query_sample]} for col in range(len(column_list))]
-        )
+    return [{'column' : column_list[col],'samples' : [row[col] for row in query_sample]} for col in range(len(column_list))]
 
 # step 4 aa mm
 # can be use when the auto is perfect
@@ -89,5 +83,5 @@ def setup_manual_columns():
         } 
     """
     columns = response['columns']
-    Database().importTableOasisBase(columns)
+    Database().importTableOasisBaseSales(columns)
     

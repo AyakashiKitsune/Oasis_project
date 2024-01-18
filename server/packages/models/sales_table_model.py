@@ -22,14 +22,13 @@ class Sales(Base):
     
     sales_columns = ['date','name', 'price','category', 'sale' ]
     def __repr__(self):
-        return {
-            "id"   : self.id, 
-            "date" : self.date,
-            "name" : self.name,
-            'category' : self.category,
-            'price' : self.price,
-            'sale' : self.sale
-        }
+        return f"""\n
+            'id'   : {self.id}, 
+            'date' : {self.date},
+            'name' : {self.name},
+            'category' : {self.category},
+            'price' : {self.price},
+            'sale' : {self.sale}"""
 
     def to_dict(self):
         return {

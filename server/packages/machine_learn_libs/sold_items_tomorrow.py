@@ -139,14 +139,14 @@ def learn_wholesales():
         )
     # original table where to store the sales and dates
     odf = pd.DataFrame(
-            column=['date','sales']
+            columns=['date','sales']
         )
     fetch = Database().session.execute(select(Sales.date,func.sum(Sales.sale).label("sum")).group_by(Sales.date)).fetchall()
     odf['date'] = [pd.to_datetime(item[0]) for item in fetch]
     odf['sales'] = [item[1] for item in fetch]
     datediff = sorted(list(set(newdates) - set(odf['date'].tolist())))
     for date in datediff:
-        odf.iloc[len(odf)] = [date, 0]
+        odf.loc[len(odf)] = [date, 0]
     
     odf['sales'] = normalizer(odf['sales'])
     ndf = odf['sales'].diff().shift(-1)

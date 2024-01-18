@@ -75,21 +75,19 @@ class Database:
         null_value_table = self.get_null_rows(df)
         df.dropna(inplace=True,)
         # shortest way to get make csv to sql table
-        try:
-            df.to_sql(
-                name="original_table",
-                con=self.engine.connect(),
-                if_exists='replace',
-                chunksize=int(len(df)/10),
-                index=False    
-            )
-        except:
-            pass 
+        
+        df.to_sql(
+            name="original_table",
+            con=self.engine.connect(),
+            if_exists='replace',
+            chunksize=int(len(df)/10),
+            index=False    
+        )
         del(df)
         return null_value_table
 
     # original_table to sales table
-    def importTableOasisBase(self,columns):
+    def importTableOasisBaseSales(self,columns):
         # ['date','name', 'price','category', 'sale' ]
         # read the old table
         df = pd.read_sql_table(table_name="original_table",con=self.engine.connect())
@@ -101,15 +99,20 @@ class Database:
         df.rename(columns=columns,inplace=True)
         df['date']  = pd.to_datetime(df["date"])
         # save it
-        df.to_sql(name="Sales",con=self.engine.connect(),if_exists='replace',index=False,chunksize=int(len(df)/10))
+        df.reset_index(drop=True,inplace=True)
+        df.to_sql(name="Sales",con=self.engine.connect(),if_exists='replace',index_label='id',chunksize=int(len(df)/10))
         del(df)
 
     # return a dictionary/json {column_name, table} 
     def get_null_rows(self,df):
         null_clms = []
+        loss = 0
         for col in df.columns:
-            if df[df[col].isnull()].shape[0] > 0:
+            check = df[df[col].isnull()].shape[0]
+            if check > 0:
                 null_clms.append(col)
+                if loss <= check:
+                    loss = check
         tables = []
         for col in null_clms:
             tables.append(
@@ -120,7 +123,7 @@ class Database:
             )
         print(tables)
         del(null_clms)
-        return tables
+        return {'tables' : tables, 'loss' : loss }
 
     # insert table to any table just make a class like Inventory(), Sales()
     def insert(self,obj):
@@ -130,18 +133,18 @@ class Database:
         pass
     
     # read sales on specific date 
-    def readSalesOnDate(self, YYYYMMDD) -> list:
+    def readSalesOnDate(self, YYYYMMDD):
         return self.session.execute(
             select(Sales)
             .where(Sales.date == YYYYMMDD)
-            ).scalars().to_dict()
+            ).scalars().all()
 
     # read sales on between dates
-    def readSalesBetweendates(self,fromdate,todate) -> list:
+    def readSalesBetweendates(self,fromdate,todate):
         return self.session.execute(
             select(Sales)
             .where(between(Sales.date,fromdate,todate))
-            ).scalars().to_dict()
+            ).scalars().all()
 
     def distinctValuesColumn(self):
         return self.session.execute(

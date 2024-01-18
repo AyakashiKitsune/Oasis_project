@@ -13,7 +13,7 @@ class Inventory(Base):
     __tablename__ = "Inventory"
     id          = mapped_column(type_=sqltypes.Integer,primary_key=True,autoincrement=True)
     name        = mapped_column(String(100),nullable=False)
-    price       = mapped_column(nullable=False,type_=sqltypes.Integer)
+    date        = mapped_column(nullable=False,type_=sqltypes.Date)
     category    = mapped_column(String(100),nullable=False)
     current_stock        = mapped_column(nullable=False,type_= sqltypes.Integer)
     maximum_stock        = mapped_column(nullable=False,type_= sqltypes.Integer)
