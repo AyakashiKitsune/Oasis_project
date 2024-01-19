@@ -2,12 +2,13 @@ from os import replace
 from sqlalchemy import URL, between,create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-
+import numpy as np
 from ..utils.utils import pd
 from ..utils.utils import Base
 
 from ..models.sales_table_model import Sales
 from ..models.inventory_table_model import Inventory
+from ..models.savekill_table_model import SaveKill
 
 
 with open("password.txt") as f:
@@ -64,7 +65,8 @@ class Database:
             self.engine,
             tables=[
                 Sales.__table__,    # child
-                Inventory.__table__ # child
+                Inventory.__table__, # child
+                SaveKill.__table__ # child
             ]) # type: ignore
         
     # import the original table to original_table table as old table
@@ -101,6 +103,7 @@ class Database:
         # save it
         df.reset_index(drop=True,inplace=True)
         df.to_sql(name="Sales",con=self.engine.connect(),if_exists='replace',index_label='id',chunksize=int(len(df)/10))
+        self.makesavekilltable()
         del(df)
 
     # return a dictionary/json {column_name, table} 
@@ -172,3 +175,18 @@ class Database:
     def custom_command(self, command):
         res = self.session.execute(text(command))
         return res
+    
+    def makesavekilltable(self):
+        products = self.session.execute(select(Sales.name).distinct()).scalars().fetchall()
+        for product in products:
+            fetch =  self.session.execute(select(func.month(Sales.date), func.count(Sales.sale)).where(Sales.name == product).group_by(func.month(Sales.date))).fetchall()
+            arg = np.median([i[1] for i in fetch])
+            months = {
+                f'{SaveKill.month_dict[i[0]]}': 1 if i[1] >= arg else 0  for i in fetch
+            }
+            json = {
+                'name' : product,
+                **months
+            }
+            self.insert(SaveKill(**json))
+

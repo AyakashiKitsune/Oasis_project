@@ -28,15 +28,14 @@ class Inventory(Base):
     #     self.maximum_stock = maximum_stock
     #     self.minimum_stock = minimum_stock
     def __repr__(self):
-        return {
-            "id"   : self.id, 
-            "date" : self.date,
-            "name" : self.name,
-            'category' : self.category,
-            'current_stock' : self.current_stock,
-            'maximum_stock' : self.maximum_stock,
-            'minimum_stock' : self.minimum_stock
-        }
+        return f"""\n
+            "id"   : {self.id}, 
+            "date" : {self.date},
+            "name" : {self.name},
+            'category' : {self.category},
+            'current_stock' : {self.current_stock},
+            'maximum_stock' : {self.maximum_stock},
+            'minimum_stock' : {self.minimum_stock}"""
 
     def to_dict(self):
         return {

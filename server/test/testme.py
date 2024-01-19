@@ -52,17 +52,17 @@ import os
 #     sale=300
 # )
 # # Database().insert(stmt)
-folder_path = 'model'
-files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-files =[i.replace("-sales.keras",'') for i in files]
-products = Database().session.execute(select(Sales.name).distinct()).scalars().fetchall()
+# folder_path = 'model'
+# files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+# files =[i.replace("-sales.keras",'') for i in files]
+# products = Database().session.execute(select(Sales.name).distinct()).scalars().fetchall()
 
-a = [str(i) for i in products]
-b = [str(i) for i in files]
-c = sorted(list(set(a)- set(b)))
-print(a,len(a))
-print(b,len(b))
-print(c,len(c))
+# a = [str(i) for i in products]
+# b = [str(i) for i in files]
+# c = sorted(list(set(a)- set(b)))
+# print(a,len(a))
+# print(b,len(b))
+# print(c,len(c))
 
 # fetch = Database().session.execute(select(Sales.date,func.sum(Sales.sale).label("sum")).where(Sales.name == products[0]).group_by(Sales.date)).fetchall()
 # print(fetch[0])
@@ -206,3 +206,51 @@ print(c,len(c))
 # # call(["split","--verbose","-l","50000","newlongIowaLiqourfixed.csv", "chunked/"])
 
 # # print(columns)
+
+
+month_dict = {
+    1: 'january',
+    2: 'february',
+    3: 'march',
+    4: 'april',
+    5: 'may',
+    6: 'june',
+    7: 'july',
+    8: 'august',
+    9: 'september',
+    10: 'october',
+    11: 'november',
+    12: 'december'
+}
+products = Database().session.execute(select(Sales.name).distinct()).scalars().fetchall()
+# for product in products:
+product = products[0]
+fetch = Database().session.execute(select(func.month(Sales.date), func.count(Sales.sale)).where(Sales.name == product).group_by(func.month(Sales.date))).fetchall()
+print(f'\n{product}')
+arg = np.median([i[1] for i in fetch]) 
+months = {
+    f'{month_dict[i[0]]}': 1 if i[1] >= arg else 0  for i in fetch
+}
+json = {
+    'name' : product,
+    **months
+}
+
+print(json)
+
+    # for i in fetch:
+    #     print("median",month_dict[i[0]] , i[1], arg, 1 if i[1] > arg else '')
+
+    # arg = np.mean([i[1] for i in fetch]) 
+    # for i in fetch:
+    #     print("mean",month_dict[i[0]] , i[1], arg, 1 if i[1] > arg else '')
+from packages.models.savekill_table_model import SaveKill
+Database().insert(SaveKill(**{
+        'name' : "something else",
+        'january' : 1
+    }))
+print(
+    SaveKill(**{
+        'january' : 1
+    })
+)

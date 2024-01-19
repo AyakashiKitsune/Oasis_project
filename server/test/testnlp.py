@@ -3,11 +3,11 @@ from packages.sql.sql_controller import Database
 from Server_Paths.Setup.setup_path import setup_auto_columns
 
 # import the database
-result = Database().importTableOriginalTable('Iowa_Liquor_Sales_year2012.csv') # not compatible with the dataset
-print(result)
+# result = Database().importTableOriginalTable('Iowa_Liquor_Sales_year2012.csv') # not compatible with the dataset
+# print(result)
 
 # auto // the nlp  
-# res = setup_auto_columns()
+res = setup_auto_columns()
 # print(res)
 
 
@@ -19,4 +19,4 @@ db={
     'Sale (Dollars)':'sale'}
 
 # # manual base import
-# Database().importTableOasisBase(db)
+# Database().importTableOasisBaseSales(db)
