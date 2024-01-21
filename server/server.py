@@ -15,4 +15,4 @@ app.register_blueprint(Inventory_path,url_prefix= "/inventory")
 app.register_blueprint(Setup_path,url_prefix= "/setup")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0",debug=True)

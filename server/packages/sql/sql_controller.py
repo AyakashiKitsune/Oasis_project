@@ -1,4 +1,4 @@
-from os import replace
+from flask import jsonify
 from sqlalchemy import URL, between,create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
@@ -142,7 +142,7 @@ class Database:
                 select(Sales.date, func.sum(Sales.sale).label('sum'))
                 .where(Sales.date == YYYYMMDD)
             ).fetchone()
-            return request
+            return jsonify({"date": request[0],"sum" : request[1]})
         else: 
             request = self.session.execute(
                 select(Sales)
@@ -158,7 +158,7 @@ class Database:
                 .where(between(Sales.date,fromdate,todate))
                 .group_by(Sales.date)
             ).fetchall()
-            return request #tuple ()
+            return [{"date": i[0],"sum" : i[1]}for i in request] #tuple ()
         else:
             request = self.session.execute(
                 select(Sales)
