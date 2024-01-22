@@ -1,8 +1,9 @@
+from datetime import datetime
 from joblib import Parallel, delayed
-from sqlalchemy import func, select
+from sqlalchemy import between, func, select
 
 from ..models.sales_table_model import Sales
-from ..utils.utils import pd,np,tf, normalizer, get_min_max_of
+from ..utils.utils import denormalizer, pd,np,tf, normalizer, get_min_max_of
 from ..sql.sql_controller import Database
 import os
 
@@ -59,7 +60,9 @@ def learn_sales_item(replace_models=False):
         
     for product in products:
         # diff one
-        ndf = odf[f'{product}'].diff().shift(-1)
+        ndf = odf[f'{product}'].diff()
+        ndf.dropna(inplace=True)
+        ndf.reset_index(inplace=True,drop=True)
         avesales = ndf.mean()
         x = pd.DataFrame(
             data = {str(i) : ndf.shift(-i) for i in range(7)} 
@@ -111,7 +114,6 @@ def learn_sales_item(replace_models=False):
         model.save(f'model/{product}-sales.keras',)
         print(f'model/{product}-sales.keras')
 
-
 def preprocess_product_tablesales(product, newdates, dates,):
     df = pd.DataFrame(columns=['date', f'sales {product}'])
 
@@ -149,7 +151,10 @@ def learn_wholesales():
         odf.loc[len(odf)] = [date, 0]
     
     odf['sales'] = normalizer(odf['sales'])
-    ndf = odf['sales'].diff().shift(-1)
+    ndf = odf['sales'].diff()
+    ndf.dropna(inplace=True)
+    ndf.reset_index(drop=True,inplace=True)
+    print(odf)
     avesales = ndf.mean()
     x = pd.DataFrame(
         data = {str(i) : ndf.shift(-i) for i in range(7)} 
@@ -164,7 +169,10 @@ def learn_wholesales():
     x['average'] = average
     x['goingup'] = goingup
     x.dropna(inplace=True)
+    print(x)
     y =  x.pop('ans')
+    print(x)
+    print('y',y)
     x = x.to_numpy().reshape(x.shape[0],x.shape[1],1)
 
     model = tf.keras.models.Sequential([
@@ -195,5 +203,72 @@ def learn_wholesales():
         if eval >= 0.8 and eval <= 1.0:
             break 
         train = train + 1
-    
+    # model = tf.keras.models.load_model('model/wholesales.keras')
+    # res =   model.predict(x.iloc[-1].to_numpy().reshape(1,10,1))
+    # print(res)
     model.save(f'model/wholesales.keras',)
+
+def wholesales_prediction(duration):
+    wholesales = Database().session.execute(
+        select(Sales.date,func.sum(Sales.sale))
+        .group_by(Sales.date)
+    ).all()
+
+    df = pd.DataFrame(
+        columns = ['dates','sales']
+    )
+    olddates = [pd.to_datetime(i[0]) for i in wholesales]
+    df['dates'] = olddates
+    df['sales'] = [i[1] for i in wholesales]
+
+
+    newdates = pd.date_range(np.min(olddates), np.max(olddates))
+    diffdate = set(newdates) - set(olddates)
+    for i in list(diffdate):
+        df.loc[len(df)] = [i, 0]
+    df.sort_values('dates',inplace=True)
+    df.reset_index(drop=True,inplace=True)
+
+    odf = df.copy(True)
+    df['sales'] = normalizer(df['sales'])
+    averagesales =  df['sales'].mean()
+    df['sales'] = df['sales'].diff()
+
+    df = df.tail(14)
+    logger = []
+    logger.append(df['sales'][-7:].to_numpy())
+    results = []
+    for row in range(duration):
+        takelastseven = logger[row]
+        x = [*takelastseven,
+            1 if np.mean(takelastseven)  > averagesales else 0,
+            np.mean(takelastseven),
+            1 if takelastseven[0] < takelastseven[-1] else 0]
+
+        model = tf.keras.models.load_model('model/wholesales.keras')
+        pred = model.predict(np.reshape(x,(1,10,1)))
+        result = pred[0][0]
+        results.append(result)
+        logger.append([*takelastseven[1:],result])
+
+
+    buffer_lags_dates = df['dates'].tolist()
+    buffer_lags_sales = odf['sales'].tail(14).to_numpy()
+    
+    prediction_dates = pd.date_range(np.max(df['dates']), np.max(df['dates']) + pd.Timedelta(days=duration))
+    prediction_sales = [denormalizer(i,odf['sales']) for i in results]
+
+    return {
+        'buffer_lags' : [
+            {
+                'date' :  buffer_lags_dates[i],
+                'sales' : buffer_lags_sales[i]
+            } for i in range(len(df))
+        ],
+        "prediction" : [
+            {
+                'date' :  prediction_dates[i],
+                'sales' : prediction_sales[i]
+            } for i in range(len(results))
+        ]
+    }

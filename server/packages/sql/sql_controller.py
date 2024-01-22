@@ -150,6 +150,23 @@ class Database:
             ).scalars()
             return [i.to_dict() for i in request]
 
+    def readSalesRecent(self,wholesale = False):
+        recentdate = self.session.execute(
+            select(func.max(Sales.date))
+        ).scalar()
+        if wholesale:
+            request = self.session.execute(
+                select(Sales.date, func.sum(Sales.sale).label('sum'))
+                .where(Sales.date == recentdate)
+            ).fetchone()
+            return jsonify({"date": request[0],"sum" : request[1]})
+        else: 
+            request = self.session.execute(
+                select(Sales)
+                .where(Sales.date == recentdate)
+            ).scalars()
+            return [i.to_dict() for i in request]
+
     # read sales on between dates
     def readSalesBetweendates(self,fromdate,todate,wholesale=False):
         if wholesale:
