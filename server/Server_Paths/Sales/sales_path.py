@@ -9,6 +9,24 @@ Sales_path = Blueprint("Sales_path",__name__)
 def home():
     return ""
 
+@Sales_path.route("/overview",methods= ['GET'])
+def overview():
+    fourteen_days_wholesales,seven_days_wholesales,sold_count_product,total_sales_year,total_sold_year = Database().overview_query()
+    return {
+        "fourteen_days_wholesales" : fourteen_days_wholesales ,
+        "seven_days_wholesales" : seven_days_wholesales ,
+        "sold_count_product" : sold_count_product,
+        "total_sales_year" : total_sales_year ,
+        "total_sold_year" : total_sold_year  
+    } 
+
+# @Sales_path.route('/recent_date',methods=['GET'])
+# def recent_date():
+#     recentdate = Database().recent_date()
+#     return {
+#         'recent_date' : recent_date
+#     }
+
 @Sales_path.route('/get_sales/<date>',methods=['GET'])
 def get_sales(date):
     wholesale = request.args.get("wholesale") # 1 - 0

@@ -27,6 +27,7 @@ json = {
 
 
 
+from datetime import datetime, timedelta
 from joblib import Parallel, delayed
 from matplotlib.pylab import stem
 from sqlalchemy import desc, func, insert, select,text
@@ -208,49 +209,62 @@ import os
 # # print(columns)
 
 
-month_dict = {
-    1: 'january',
-    2: 'february',
-    3: 'march',
-    4: 'april',
-    5: 'may',
-    6: 'june',
-    7: 'july',
-    8: 'august',
-    9: 'september',
-    10: 'october',
-    11: 'november',
-    12: 'december'
-}
-products = Database().session.execute(select(Sales.name).distinct()).scalars().fetchall()
-# for product in products:
-product = products[0]
-fetch = Database().session.execute(select(func.month(Sales.date), func.count(Sales.sale)).where(Sales.name == product).group_by(func.month(Sales.date))).fetchall()
-print(f'\n{product}')
-arg = np.median([i[1] for i in fetch]) 
-months = {
-    f'{month_dict[i[0]]}': 1 if i[1] >= arg else 0  for i in fetch
-}
-json = {
-    'name' : product,
-    **months
-}
+# month_dict = {
+#     1: 'january',
+#     2: 'february',
+#     3: 'march',
+#     4: 'april',
+#     5: 'may',
+#     6: 'june',
+#     7: 'july',
+#     8: 'august',
+#     9: 'september',
+#     10: 'october',
+#     11: 'november',
+#     12: 'december'
+# }
+# products = Database().session.execute(select(Sales.name).distinct()).scalars().fetchall()
+# # for product in products:
+# product = products[0]
+# fetch = Database().session.execute(select(func.month(Sales.date), func.count(Sales.sale)).where(Sales.name == product).group_by(func.month(Sales.date))).fetchall()
+# print(f'\n{product}')
+# arg = np.median([i[1] for i in fetch]) 
+# months = {
+#     f'{month_dict[i[0]]}': 1 if i[1] >= arg else 0  for i in fetch
+# }
+# json = {
+#     'name' : product,
+#     **months
+# }
 
-print(json)
+# print(json)
 
-    # for i in fetch:
-    #     print("median",month_dict[i[0]] , i[1], arg, 1 if i[1] > arg else '')
+#     # for i in fetch:
+#     #     print("median",month_dict[i[0]] , i[1], arg, 1 if i[1] > arg else '')
 
-    # arg = np.mean([i[1] for i in fetch]) 
-    # for i in fetch:
-    #     print("mean",month_dict[i[0]] , i[1], arg, 1 if i[1] > arg else '')
-from packages.models.savekill_table_model import SaveKill
-Database().insert(SaveKill(**{
-        'name' : "something else",
-        'january' : 1
-    }))
-print(
-    SaveKill(**{
-        'january' : 1
-    })
-)
+#     # arg = np.mean([i[1] for i in fetch]) 
+#     # for i in fetch:
+#     #     print("mean",month_dict[i[0]] , i[1], arg, 1 if i[1] > arg else '')
+# from packages.models.savekill_table_model import SaveKill
+# Database().insert(SaveKill(**{
+#         'name' : "something else",
+#         'january' : 1
+#     }))
+# print(
+#     SaveKill(**{
+#         'january' : 1
+#     })
+# )
+recentdate = Database().session.execute(
+            select(func.max(Sales.date))
+        ).scalar()
+day = pd.to_datetime(recentdate)
+print()
+
+fromdate = recentdate -timedelta(days=14)
+fourteen_days_wholesales = Database().readSalesBetweendates(fromdate=fromdate,todate=recentdate,wholesale=True)
+seven_days_wholesales = fourteen_days_wholesales[7:]
+
+print(recentdate,fromdate)
+print(fourteen_days_wholesales)
+print(seven_days_wholesales)

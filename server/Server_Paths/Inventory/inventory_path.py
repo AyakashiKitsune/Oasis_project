@@ -10,14 +10,10 @@ Inventory_path = Blueprint("Inventory_path",__name__)
 def home():
     return "home Inventory_path"
 
-@Inventory_path.route('/get_sales/<date>',methods=['POST'])
-def get_inventory(date):
+@Inventory_path.route('/get_inventory/',methods=['GET'])
+def get_inventory():
     pass
 
-@Inventory_path.route('/predict_sales/<duration>',methods=['POST'])
-def predict_inventory(duration):
-    pass
-
-@Inventory_path.route('/predict_sales/<product>/<duration>',methods=['POST'])
-def analyze_sale_notsale_product(duration): 
+@Inventory_path.route('/savekill/<product>',methods=['GET'])
+def analyze_savekill_product(product): 
     pass

@@ -7,7 +7,7 @@ from Server_Paths.Setup.setup_path import setup_auto_columns
 # print(result)
 
 # auto // the nlp  
-res = setup_auto_columns()
+# res = setup_auto_columns()
 # print(res)
 
 
@@ -19,4 +19,4 @@ db={
     'Sale (Dollars)':'sale'}
 
 # # manual base import
-# Database().importTableOasisBaseSales(db)
+Database().importTableOasisBaseSales(db)

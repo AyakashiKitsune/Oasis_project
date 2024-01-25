@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta
 from flask import jsonify
-from sqlalchemy import URL, between,create_engine, func, select
+from sqlalchemy import URL, asc, between,create_engine, desc, func, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 import numpy as np
-from ..utils.utils import pd
+from sympy import ordered
+from ..utils.utils import get_min_max_of, pd
 from ..utils.utils import Base
 
 from ..models.sales_table_model import Sales
@@ -100,9 +102,19 @@ class Database:
         # rename them the rest
         df.rename(columns=columns,inplace=True)
         df['date']  = pd.to_datetime(df["date"])
+        df['category'] = df['category'].astype(str)
+        mindate, maxdate = get_min_max_of(df['date'])
+        alldates = pd.date_range(mindate,maxdate)
+        diffdate = set(alldates)-set(df['date'])
+
         # save it
         df.reset_index(drop=True,inplace=True)
+        print(df.dtypes)
         df.to_sql(name="Sales",con=self.engine.connect(),if_exists='replace',index_label='id',chunksize=int(len(df)/10))
+        for i in diffdate:
+            self.insert(Sales(
+                date = f'{i.year}-{i.month}-{i.day}'
+            ))
         self.makesavekilltable()
         del(df)
 
@@ -141,12 +153,14 @@ class Database:
             request = self.session.execute(
                 select(Sales.date, func.sum(Sales.sale).label('sum'))
                 .where(Sales.date == YYYYMMDD)
+                .order_by(asc(Sales.date))
             ).fetchone()
             return jsonify({"date": request[0],"sum" : request[1]})
         else: 
             request = self.session.execute(
                 select(Sales)
                 .where(Sales.date == YYYYMMDD)
+                .order_by(asc(Sales.date))
             ).scalars()
             return [i.to_dict() for i in request]
 
@@ -158,12 +172,15 @@ class Database:
             request = self.session.execute(
                 select(Sales.date, func.sum(Sales.sale).label('sum'))
                 .where(Sales.date == recentdate)
+                .order_by(asc(Sales.date))
             ).fetchone()
-            return jsonify({"date": request[0],"sum" : request[1]})
+            return jsonify([{"date": request[0],"sum" : request[1]}])
         else: 
             request = self.session.execute(
                 select(Sales)
                 .where(Sales.date == recentdate)
+                .order_by(asc(Sales.date))
+
             ).scalars()
             return [i.to_dict() for i in request]
 
@@ -174,14 +191,53 @@ class Database:
                 select(Sales.date, func.sum(Sales.sale))
                 .where(between(Sales.date,fromdate,todate))
                 .group_by(Sales.date)
+                .order_by(asc(Sales.date))
             ).fetchall()
             return [{"date": i[0],"sum" : i[1]}for i in request] #tuple ()
         else:
             request = self.session.execute(
                 select(Sales)
                 .where(between(Sales.date,fromdate,todate))
+                .order_by(asc(Sales.date))
             ).scalars()
             return [i.to_dict() for i in request] #list
+        
+    def overview_query(self,):
+        currentDate = datetime.now()
+        recentdate = self.session.execute(
+            select(func.max(Sales.date))
+        ).scalar()
+        fromdate = recentdate - timedelta(days=14)
+        
+        fourteen_days_wholesales    = self.readSalesBetweendates(fromdate=fromdate,todate=recentdate,wholesale=True)
+        seven_days_wholesales       = fourteen_days_wholesales[7:]
+        total_sales_year            = self.session.execute(
+                                            select(func.sum(Sales.sale)).where(func.year(Sales.date) == currentDate.date)
+                                    ).scalar() 
+        total_sold_year             = self.session.execute(
+                                        select(func.count(Sales.sale)).where(func.year(Sales.date) == currentDate.date)
+                                    ).scalar() 
+        sold_count_product          = self.session.execute(
+                                        select(Sales.name, func.count(Sales.name).label("sold"))
+                                        # .where(func.year(Sales.date) == currentDate)
+                                        .group_by(Sales.name)
+                                        .order_by(desc("sold"))
+                                    ).fetchall()
+        
+        sold_count_product          = [
+            {"name" : i[0], "sold" : i[1] } for i in sold_count_product
+        ]
+        if total_sales_year == None :
+            total_sales_year = 0
+
+
+        return fourteen_days_wholesales,seven_days_wholesales,sold_count_product,total_sales_year,total_sold_year
+
+    def recent_date(self):
+        recentdate = self.session.execute(
+            select(func.max(Sales.date))
+        ).scalar()
+        return [i for i in recentdate]
 
     def distinctValuesColumn(self):
         return self.session.execute(
@@ -195,6 +251,7 @@ class Database:
     
     def makesavekilltable(self):
         products = self.session.execute(select(Sales.name).distinct()).scalars().fetchall()
+        products.remove("None")
         for product in products:
             fetch =  self.session.execute(select(func.month(Sales.date), func.count(Sales.sale)).where(Sales.name == product).group_by(func.month(Sales.date))).fetchall()
             arg = np.median([i[1] for i in fetch])

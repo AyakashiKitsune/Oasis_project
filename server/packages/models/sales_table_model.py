@@ -13,10 +13,10 @@ class Sales(Base):
     __tablename__ = "Sales"
     id          = mapped_column(type_=sqltypes.Integer,primary_key=True,autoincrement=True)
     date        = mapped_column(nullable=False,type_=sqltypes.Date)
-    name        = mapped_column(String(100),nullable=False)
-    category    = mapped_column(String(100),nullable=False)    
-    price       = mapped_column(nullable=False,type_=sqltypes.Integer)
-    sale        = mapped_column(nullable=False,type_= sqltypes.Double)
+    name        = mapped_column(String(100),nullable=False,default="None")
+    category    = mapped_column(String(100),nullable=False,default="None")    
+    price       = mapped_column(nullable=False,type_=sqltypes.Double , default=0)
+    sale        = mapped_column(nullable=False,type_= sqltypes.Double, default=0)
     
     # products : Mapped[List["Product"]] = relationship("Product",back_populates="sales")
     
