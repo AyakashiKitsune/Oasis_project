@@ -234,10 +234,13 @@ class Database:
         return fourteen_days_wholesales,seven_days_wholesales,sold_count_product,total_sales_year,total_sold_year
 
     def recent_date(self):
-        recentdate = self.session.execute(
+        res = self.session.execute(
             select(func.max(Sales.date))
         ).scalar()
-        return [i for i in recentdate]
+        res1 = self.session.execute(
+            select(func.min(Sales.date))
+        ).scalar()
+        return res,res1
 
     def distinctValuesColumn(self):
         return self.session.execute(

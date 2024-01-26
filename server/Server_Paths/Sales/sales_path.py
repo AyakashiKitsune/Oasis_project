@@ -1,5 +1,5 @@
 import select
-from flask import Blueprint, request
+from flask import Blueprint, jsonify, request
 from packages.sql.sql_controller import Database
 from packages.machine_learn_libs.sold_items_tomorrow import wholesales_prediction
 Sales_path = Blueprint("Sales_path",__name__)
@@ -20,12 +20,13 @@ def overview():
         "total_sold_year" : total_sold_year  
     } 
 
-# @Sales_path.route('/recent_date',methods=['GET'])
-# def recent_date():
-#     recentdate = Database().recent_date()
-#     return {
-#         'recent_date' : recent_date
-#     }
+@Sales_path.route('/recent_date',methods=['GET'])
+def recent_date():
+    res,res1 = Database().recent_date()
+    return {
+        'min_date' : res1,
+        'max_date' : res
+    }
 
 @Sales_path.route('/get_sales/<date>',methods=['GET'])
 def get_sales(date):
@@ -54,7 +55,7 @@ def get_sales_between(fromdate,todate):
         res = Database().readSalesBetweendates(fromdate=fromdate,todate=todate)
     return res
 
-@Sales_path.route('/predict_wholesales',methods=['GET'])
+@Sales_path.route('/predict_wholesales',methods=['POST'])
 def predict_wholesales():
     json = request.json
     res = wholesales_prediction(json['duration'])
