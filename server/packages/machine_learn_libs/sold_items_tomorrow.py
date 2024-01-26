@@ -255,7 +255,7 @@ def wholesales_prediction(duration):
     buffer_lags_dates = df['dates'].tolist()
     buffer_lags_sales = odf['sales'].tail(14).to_numpy()
     
-    prediction_dates = pd.date_range(np.max(df['dates']), np.max(df['dates']) + pd.Timedelta(days=duration))
+    prediction_dates = pd.date_range(np.max(df['dates']) + pd.Timedelta(days=1), np.max(df['dates']) + pd.Timedelta(days=duration))
     prediction_sales = [denormalizer(i,odf['sales']) for i in results]
 
     return {
