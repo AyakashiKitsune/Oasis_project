@@ -3,9 +3,18 @@
 # url = 'http://127.0.0.1:5000/'
 # destination = f'{url}setup'
 
+import select
+import numpy as np
+
+import pandas as pd
+from sqlalchemy import func,select
+from packages.sql.sql_controller import Database
+from packages.models.sales_table_model import Sales
+
+
 data = {
-    "message" : "do something",
-    'error' : "something went wrong"
+    "message": "do something",
+    'error': "something went wrong"
 }
 
 # response = requests.post(destination,json=data,)
@@ -17,28 +26,12 @@ data = {
 # db = sql_controller.Database()
 # db.importTableOriginalTable('aa.csv')
 json = {
-    'name' : 'val',
-    'key' : 'val'
+    'name': 'val',
+    'key': 'val'
 }
 
 # print(set(json.values()))
 
-
-
-
-
-from datetime import datetime, timedelta
-from joblib import Parallel, delayed
-from matplotlib.pylab import stem
-from sqlalchemy import desc, func, insert, select,text
-from packages.models.sales_table_model import Sales
-from packages.sql.sql_controller import Database
-import pandas as pd
-import tensorflow as tf
-import numpy as np
-from packages.utils.utils import normalizer
-from packages.machine_learn_libs.Unitable import auto_column_test_predict
-import os
 
 # column_list = Database().custom_command(command="""SELECT column_name FROM information_schema.columns WHERE table_schema = 'OasisBase' AND table_name = 'original_table';""").scalars().fetchall()
 # print(column_list)
@@ -85,11 +78,9 @@ import os
 # )
 
 
-
-
 # df['date'] = [pd.to_datetime(item[0]) for item in fetch]
 # df[f'sales {product}'] =[item[1] for item in fetch]
-# datediff = sorted(list(set(newdates) - set(dates))) 
+# datediff = sorted(list(set(newdates) - set(dates)))
 # for date in datediff:
 #     df.loc[len(df)] = [date, 0]
 # df.sort_values('date',inplace=True)
@@ -100,7 +91,7 @@ import os
 # ndf = odf[product].diff().shift(-1)
 # avesales = ndf.mean()
 # x = pd.DataFrame(
-#     data = {str(i) : ndf.shift(-i) for i in range(7)} 
+#     data = {str(i) : ndf.shift(-i) for i in range(7)}
 # )
 # x.replace(0,np.nan,inplace=True)
 # x.dropna(inplace=True)
@@ -143,20 +134,17 @@ import os
 #     model.fit(x,y.to_numpy(),epochs=train,batch_size=16)
 #     eval = model.evaluate(x,y)[-1]
 #     if eval >= 0.8 and eval <= 1.0:
-#         break 
+#         break
 #     train+=1
 
 # model.save(f'model/{product}-sales.keras',)
-
 
 
 # print(pd)
 
 
 # for k in res.keys:
-#     print(k,':',res[k]) 
-
-
+#     print(k,':',res[k])
 
 
 # res = db.session.execute(text("""SELECT label,name FROM original_table limit 10;""")).fetchall()
@@ -194,7 +182,6 @@ import os
 #     date = [is_date(i) for i in data]
 #     print(date.index(True))
 #     print(columns)
-    
 
 
 # # import subprocess
@@ -228,7 +215,7 @@ import os
 # product = products[0]
 # fetch = Database().session.execute(select(func.month(Sales.date), func.count(Sales.sale)).where(Sales.name == product).group_by(func.month(Sales.date))).fetchall()
 # print(f'\n{product}')
-# arg = np.median([i[1] for i in fetch]) 
+# arg = np.median([i[1] for i in fetch])
 # months = {
 #     f'{month_dict[i[0]]}': 1 if i[1] >= arg else 0  for i in fetch
 # }
@@ -242,7 +229,7 @@ import os
 #     # for i in fetch:
 #     #     print("median",month_dict[i[0]] , i[1], arg, 1 if i[1] > arg else '')
 
-#     # arg = np.mean([i[1] for i in fetch]) 
+#     # arg = np.mean([i[1] for i in fetch])
 #     # for i in fetch:
 #     #     print("mean",month_dict[i[0]] , i[1], arg, 1 if i[1] > arg else '')
 # from packages.models.savekill_table_model import SaveKill
@@ -255,16 +242,58 @@ import os
 #         'january' : 1
 #     })
 # )
-recentdate = Database().session.execute(
-            select(func.max(Sales.date))
-        ).scalar()
-day = pd.to_datetime(recentdate)
-print()
+# recentdate = Database().session.execute(
+#             select(func.max(Sales.date))
+#         ).scalar()
+# day = pd.to_datetime(recentdate)
+# print()
 
-fromdate = recentdate -timedelta(days=14)
-fourteen_days_wholesales = Database().readSalesBetweendates(fromdate=fromdate,todate=recentdate,wholesale=True)
-seven_days_wholesales = fourteen_days_wholesales[7:]
+# fromdate = recentdate -timedelta(days=14)
+# fourteen_days_wholesales = Database().readSalesBetweendates(fromdate=fromdate,todate=recentdate,wholesale=True)
+# seven_days_wholesales = fourteen_days_wholesales[7:]
 
-print(recentdate,fromdate)
-print(fourteen_days_wholesales)
-print(seven_days_wholesales)
+# print(recentdate,fromdate)
+# print(fourteen_days_wholesales)
+# print(seven_days_wholesales)
+products = Database().session.execute(select(Sales.name).distinct()).scalars().fetchall()
+print(products)
+# odf = pd.DataFrame(
+#             columns = ["name", *[i for i in range(1,13)],"min",'max', "average"]
+#         )
+
+# for i in products:
+# res = Database().session.execute(
+#             select(func.month(Sales.date), func.count(Sales.name).label('count'))
+#             .where(Sales.name == products[0])
+#             .group_by(func.month(Sales.date))).fetchall()
+
+# df = pd.DataFrame(
+#             data = {
+#                 "month" : [i[0] for i in res],
+#                 "sold" : [i[1] for i in res],
+#             }
+#         )
+
+# if(len(df) != 12):
+#     old = set(df['month'].tolist())
+#     total = set([i for i in range(1,13)])
+#     new = total - old
+
+#     for i in list(new):
+#         df.loc[len(df)] = [i,0]
+#     df.sort_values('month', inplace=True)
+#     df.reset_index(drop=True,inplace=True)
+
+# min = df['sold'].min()
+# max = df['sold'].max()
+# average = np.round((max-min) / 2)
+
+# l = [products[0],*df['sold'].tolist(), min, max, average]
+
+# odf.loc[len(odf)] = l
+
+# print(odf)
+# print(odf.head(2))
+# print(odf.dtypes.to_dict())
+
+Database().makesavekilltable()
