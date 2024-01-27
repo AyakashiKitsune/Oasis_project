@@ -277,7 +277,7 @@ class Database:
     def makeInventoryAnalysis(self):
         products = Database().session.execute(
             select(Sales.name).distinct()).scalars().fetchall()
-
+        products.remove("None")
         odf = pd.DataFrame(
                     columns = ["name", *[i for i in range(1,13)],"min",'max', "average"]
                 )
@@ -307,7 +307,7 @@ class Database:
 
             min = df['sold'].min()
             max = df['sold'].max()
-            average = np.round((max-min) / 2)
+            average = np.round((max+min) / 2)
 
             l = [str(i),*df['sold'].tolist(), min, max, average]
 
