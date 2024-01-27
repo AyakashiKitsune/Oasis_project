@@ -70,16 +70,16 @@ class SaveKill(Base):
         return {
             'id' : self.id,
             'name': self.name, 
-            'january': self.january, 
-            'february': self.february, 
-            'march': self.march, 
-            'april': self.april, 
-            'may': self.may, 
-            'june': self.june, 
-            'july': self.july, 
-            'august': self.august, 
-            'september': self.september, 
-            'october': self.october, 
-            'november': self.november, 
-            'december': self.december  
+            'january': int(self.january), 
+            'february': int(self.february), 
+            'march': int(self.march), 
+            'april': int(self.april), 
+            'may': int(self.may), 
+            'june': int(self.june), 
+            'july': int(self.july), 
+            'august': int(self.august), 
+            'september': int(self.september), 
+            'october': int(self.october), 
+            'november': int(self.november), 
+            'december': int(self.december)  
         }
