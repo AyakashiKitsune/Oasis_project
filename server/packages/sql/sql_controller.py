@@ -21,6 +21,7 @@ class Database:
     database_name = "OasisBase"
     SALES__ = "Sales"
     INVENTORY__ = "Inventory"
+    isrun = False
     # sales_columns = ['date','name', 'price','category', 'sale' ]
     # inventory_columns = ['date','name', 'price','category',  'current_stock','max_stock','min_stock' ]
     # connection = False
@@ -33,43 +34,51 @@ class Database:
     
     # constructor
     def __init__(self,host="localhost",password=password):
-        # make a link url to backend
-        url = URL.create(
-            drivername="mysql+pymysql",
-            username= "root",
-            password=password,
-            host=host,
-            port=3306,
-        )
-        # create a link to back nd
-        self.engine = create_engine(url,echo=True,)
-        # execute a sql code, to make OasisBase database
-        try:
-            with self.engine.connect() as session:
-                session.execute(text("create database {}".format(Database.database_name)))
-        except:
-            print(f"{Database.database_name} is already created!!!")
+        if not Database.isrun:
+            print("database initialization")
+            # make a link url to backend
+            url = URL.create(
+                drivername="mysql+pymysql",
+                username= "root",
+                password=password,
+                host=host,
+                port=3306,
+            )
+            # create a link to back nd
+            self.engine = create_engine(url,echo=True)
+            # execute a sql code, to make OasisBase database
+            try:
+                with self.engine.connect() as session:
+                    session.execute(text("create database {}".format(Database.database_name)))
+            except:
+                print(f"{Database.database_name} is already created!!!")
+        
         # remodify the engine with new link for safe connection
         self.engine = create_engine(
             URL.create(
-            drivername="mysql+pymysql",
-            username= "root",
-            password= "AyakashiKitsune#9262",
-            host="localhost",
-            port=3306,
-            database= Database.database_name,
-            query={"local_infile":'1'}
-        ), echo=True,connect_args={"local_infile":'1'}
+                drivername="mysql+pymysql",
+                username= "root",
+                password= "AyakashiKitsune#9262",
+                host="localhost",
+                port=3306,
+                database= Database.database_name,
+                query={"local_infile":'1'}
+            ), echo=True,connect_args={"local_infile":'1'}
         ) 
         Session = sessionmaker(self.engine,)
         self.session = Session()
-        Base.metadata.create_all(
+
+        if not Database.isrun:
+            print("database tables initialization")
+            Base.metadata.create_all(
             self.engine,
             tables=[
                 Sales.__table__,    # child
                 Inventory.__table__, # child
                 SaveKill.__table__ # child
             ]) # type: ignore
+            Database.isrun = True
+
         
     # import the original table to original_table table as old table
     def importTableOriginalTable(self, filename):
@@ -229,8 +238,6 @@ class Database:
         ]
         if total_sales_year == None :
             total_sales_year = 0
-
-
         return fourteen_days_wholesales,seven_days_wholesales,sold_count_product,total_sales_year,total_sold_year
 
     def recent_date(self):
@@ -266,4 +273,50 @@ class Database:
                 **months
             }
             self.insert(SaveKill(**json))
+
+    def makeInventoryAnalysis(self):
+        products = Database().session.execute(
+            select(Sales.name).distinct()).scalars().fetchall()
+
+        odf = pd.DataFrame(
+                    columns = ["name", *[i for i in range(1,13)],"min",'max', "average"]
+                )
+
+        for i in products:
+            res = Database().session.execute(
+                    select(func.month(Sales.date), func.count(Sales.name).label('count'))
+                    .where(Sales.name == i)
+                    .group_by(func.month(Sales.date))).fetchall()
+
+            df = pd.DataFrame(
+                    data = {
+                        "month" : [i[0] for i in res],
+                        "sold" : [i[1] for i in res],
+                    }
+                )
+            
+            if(len(df) != 12):
+                old = set(df['month'].tolist())
+                total = set([i for i in range(1,13)])
+                new = total - old
+
+                for i in list(new):
+                    df.loc[len(df)] = [i,0]
+                df.sort_values('month', inplace=True)
+                df.reset_index(drop=True,inplace=True)
+
+            min = df['sold'].min()
+            max = df['sold'].max()
+            average = np.round((max-min) / 2)
+
+            l = [str(i),*df['sold'].tolist(), min, max, average]
+
+            odf.loc[len(odf)] = l
+            
+        odf.to_sql(
+            name = "Invetory_analysis",
+            con=self.engine.connect(),
+            if_exists='replace',
+            index=False
+        )
 
